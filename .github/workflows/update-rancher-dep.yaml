@@ -1,0 +1,66 @@
+name: Update operator in rancher/rancher
+on:
+  workflow_call:
+    inputs:
+      rancher_ref:
+        description: "Submit PR against the following rancher/rancher branch (e.g. release/v2.7)"
+        default: "release/v2.8"
+        type: string
+      operator_repo:
+        description: "Operator repo (e.g. github.com/rancher/aks-operator)"
+        required: true
+        default: ""
+        type: string
+      new_operator_version:
+        description: "New operator version (e.g. 1.1.0-rc2), don't include the 'v'"
+        required: true
+        default: ""
+        type: string
+    secrets:
+      token:
+        description: "GitHub token"
+        required: true
+
+env:
+  OPERATOR_REPO: ${{inputs.operator_repo}}
+  OPERATOR_VERSION: ${{inputs.new_operator_version}}
+  GOARCH: amd64
+  CGO_ENABLED: 0
+  SETUP_GO_VERSION: '1.21.*'
+
+jobs:
+  create-rancher-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+          path: highlander-reusable-workflows
+      - name: Checkout rancher/rancher
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          repository: rancher/rancher
+          ref: ${{ inputs.rancher_ref }}
+          path: rancher
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.SETUP_GO_VERSION }}
+      - name: Run update script
+        run: ./update-rancher-dep.sh
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.token }}
+          push-to-fork: highlander-ci-bot/rancher
+          title: ' Update ${{ inputs.operator_repo }} to v${{ inputs.new_operator_version }}'
+          body: |
+            Update ${{inputs.operator_repo}} operator to v${{ inputs.new_operator_version }}
+
+            Changelog: https://${{ inputs.operator_repo }}/releases/tag/v${{ inputs.new_operator_version }}
+
+            cc @rancher/highlander
+          branch-suffix: timestamp
+          base: ${{ inputs.rancher_ref }}
+          path: ./rancher/

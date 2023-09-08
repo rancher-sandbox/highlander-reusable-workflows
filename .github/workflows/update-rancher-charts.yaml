@@ -1,0 +1,84 @@
+name: Update operator in rancher/charts
+on:
+  workflow_call:
+    inputs:
+      charts_ref:
+        description: "Submit PR against the following rancher/charts branch (e.g. dev-v2.7)"
+        default: "dev-v2.8"
+        type: string
+      operator:
+        description: "Operator name (e.g. aks-operator)"
+        required: true
+        default: ""
+        type: string
+      prev_operator_version:
+        description: "Previous operator version (e.g. 1.1.0-rc2)"
+        required: true
+        default: ""
+        type: string
+      new_operator_version:
+        description: "New operator version"
+        required: true
+        default: ""
+        type: string
+      prev_chart_version:
+        description: "Previous Rancher Chart version (e.g. 101.1.0)"
+        required: true
+        default: ""
+        type: string
+      new_chart_version:
+        description: "New Rancher Chart version"
+        required: true
+        default: ""
+        type: string
+      should_replace:
+        description: "Should the old operator version be replaced/removed? (e.g. true in case of release candidate bumps)"
+        required: true
+        default: "true"
+        type: string
+    secrets:
+      token:
+        description: "GitHub token"
+        required: true
+
+env:
+  OPERATOR: ${{ inputs.operator }}
+  PREV_OPERATOR_VERSION: ${{ inputs.prev_operator_version }}
+  NEW_OPERATOR_VERSION: ${{ inputs.new_operator_version }}
+  PREV_CHART_VERSION: ${{ inputs.prev_chart_version }}
+  NEW_CHART_VERSION: ${{ inputs.new_chart_version }}
+  REPLACE: ${{ inputs.should_replace }}
+
+jobs:
+  create-rancher-charts-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+          path: highlander-reusable-workflows
+      - name: Checkout rancher/charts
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          repository: rancher/charts
+          ref: ${{ inputs.charts_ref }}
+          path: charts
+      - name: Run release script
+        run: ./update-rancher-charts.sh      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.token }}
+          push-to-fork: highlander-ci-bot/charts
+          title: 'Update ${{ inputs.operator_repo }} operator to v${{inputs.new_operator_version }}'
+          body: |
+            Update ${{ inputs.operator_repo}} operator to v${{inputs.new_operator_version}}
+
+            Changelog: https://${{ inputs.operator_repo}}/releases/tag/v${{inputs.new_operator_version}}
+
+            cc @rancher/highlander
+          branch-suffix: timestamp
+          base: ${{ inputs.charts_ref }}
+          path: ./charts/

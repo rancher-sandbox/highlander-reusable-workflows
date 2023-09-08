@@ -1,0 +1,78 @@
+name: Build rancher chart with updated operator dependencies
+on:
+  workflow_call:
+    inputs:
+      rancher_ref:
+        description: "Submit PR against the following rancher/rancher branch (e.g. release/v2.7)"
+        required: true
+        default: "release/v2.8"
+        type: string
+      operator_repo:
+        description: "Operator repo (e.g. github.com/rancher/aks-operator)"
+        required: true
+        default: ""
+        type: string
+      operator_commit:
+        description: "Operator commit to use for updating rancher/rancher"
+        required: true
+        default: ""
+        type: string
+      rancher_image:
+        description: "Rancher image name"
+        required: true
+        default: ""
+        type: string
+      rancher_helm_repo:
+        description: "Rancher helm repo to push to"
+        default: ""
+        type: string
+
+env:
+  OPERATOR_REPO: ${{inputs.operator_repo}}
+  OPERATOR_COMMIT: ${{inputs.operator_commit}}
+  RANCHER_IMAGE: ${{inputs.rancher_image}}
+  RANCHER_IMAGE_TAG: v0.0.0-${{inputs.operator_commit}}
+  GOARCH: amd64
+  CGO_ENABLED: 0
+  SETUP_GO_VERSION: '1.21.*'
+
+jobs:
+  build-push-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.12.1'
+      - name: Checkout highlander-reusable-workflows
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          repository: rancher-sandbox/highlander-reusable-workflows
+          ref: "main"
+          path: highlander-reusable-workflows
+      - name: Checkout rancher/rancher
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          repository: rancher/rancher
+          ref: ${{ inputs.rancher_ref }}
+          path: rancher
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.SETUP_GO_VERSION }}
+      - name: Build latest rancher chart with updated operator dependencies
+        run: ./highlander-reusable-workflows/latest-rancher-build.sh
+      - name: Retag latest rancher chart
+        run: docker image tag rancher/rancher:dev ${{ inputs.rancher_image }}:${{ env.RANCHER_IMAGE_TAG }}
+      - name: Push rancher image
+        run: docker push ${{ inputs.rancher_image }}:${{ env.RANCHER_IMAGE_TAG }}
+      - name: Push rancher chart
+        if: ${{ inputs.rancher_helm_repo != '' }}
+        run: helm push charts/rancher-${{ env.RANCHER_IMAGE_TAG }}.tgz ${{ inputs.rancher_helm_repo }}
+      - name: Upload rancher helm chart as artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: rancher-${{ env.RANCHER_IMAGE_TAG }}.tgz
+          path: charts/rancher-${{ env.RANCHER_IMAGE_TAG }}.tgz
+
