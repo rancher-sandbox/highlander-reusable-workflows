@@ -66,7 +66,7 @@ jobs:
           ref: ${{ inputs.charts_ref }}
           path: charts
       - name: Run release script
-        run: ./highlander-reusable-workflows/update-rancher-charts.sh      
+        run: pwd; echo $HOME; find /home/runner -name update-rancher-charts.sh; $HOME/highlander-reusable-workflows/update-rancher-charts.sh      
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
