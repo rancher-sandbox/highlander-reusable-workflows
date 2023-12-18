@@ -112,6 +112,7 @@ jobs:
     uses: rancher-sandbox/highlander-reusable-workflows/.github/workflows/latest-rancher-build.yaml@main
     with:
       rancher_ref: ${{ inputs.rancher_ref }}
+      operator_name: ${{ inputs.operator_name }}
       operator_repo: github.com/rancher/${{ inputs.operator_name }}
       operator_commit: ${{ inputs.operator_commit }}
       rancher_image: ttl.sh/rancher-${{ inputs.operator_name }}-nightly-${{ needs.set_build_date.outputs.BUILD_DATE }}
