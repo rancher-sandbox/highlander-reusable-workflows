@@ -7,6 +7,11 @@ on:
         required: true
         default: "release/v2.8"
         type: string
+      operator_name:
+        description: "Operator name"
+        required: true
+        default: ""
+        type: string
       operator_repo:
         description: "Operator repo (e.g. github.com/rancher/aks-operator)"
         required: true
@@ -28,6 +33,7 @@ on:
         type: string
 
 env:
+  OPERATOR_NAME: ${{inputs.operator_name}}
   OPERATOR_REPO: ${{inputs.operator_repo}}
   OPERATOR_COMMIT: ${{inputs.operator_commit}}
   RANCHER_IMAGE: ${{inputs.rancher_image}}
