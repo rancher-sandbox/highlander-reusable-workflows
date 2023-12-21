@@ -11,8 +11,8 @@ else
 fi
 
 # Update operator dependencies
-CURRENT_OPERATOR_VERSION=$(go list -m all | grep ${OPERATOR_NAME} | awk '{print $2}')
 cd "${RANCHER_DIR}"
+CURRENT_OPERATOR_VERSION=$(go list -m all | grep ${OPERATOR_NAME} | awk '{print $2}')
 go mod edit -replace=${OPERATOR_REPO}@${CURRENT_OPERATOR_VERSION}=${OPERATOR_REPO}@${OPERATOR_COMMIT}
 go mod tidy
 cd pkg/apis
