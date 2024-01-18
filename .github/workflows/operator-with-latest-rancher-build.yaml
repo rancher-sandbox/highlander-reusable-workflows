@@ -77,7 +77,7 @@ jobs:
         with:
           fetch-depth: 0
           repository: rancher/${{ inputs.operator_name }}
-          ref: master
+          ref: main
           path: ${{ inputs.operator_name }}
       - name: Install Helm
         uses: azure/setup-helm@v3
