@@ -68,17 +68,13 @@ jobs:
       - name: Run release script
         run: pwd; echo $HOME; find /home/runner -name update-rancher-charts.sh; $HOME/highlander-reusable-workflows/update-rancher-charts.sh      
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.token }}
-          push-to-fork: highlander-ci-bot/charts
-          title: 'Update ${{ inputs.operator_repo }} operator to v${{inputs.new_operator_version }}'
-          body: |
-            Update ${{ inputs.operator_repo}} operator to v${{inputs.new_operator_version}}
-
-            Changelog: https://${{ inputs.operator_repo}}/releases/tag/v${{inputs.new_operator_version}}
-
-            cc @rancher/highlander
-          branch-suffix: timestamp
-          base: ${{ inputs.charts_ref }}
-          path: ./charts/
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+        run: |
+          echo "TIMESTAMP=$(date +'%s')" >> "$GITHUB_ENV"
+          git add ./charts/
+          git commit -m "Update ${{inputs.operator_repo}} operator to v${{ inputs.new_operator_version }}"
+          git remote add bot-fork https://github.com/highlander-ci-bot/charts.git
+          git push -u bot-fork HEAD:charts-$TIMESTAMP
+          gh pr create --title 'Update ${{ inputs.operator_repo }} operator to v${{inputs.new_operator_version }}' \
+            --body 'Update ${{ inputs.operator_repo}} operator to v${{inputs.new_operator_version}}\n\nChangelog: https://${{ inputs.operator_repo}}/releases/tag/v${{inputs.new_operator_version}}\n\ncc @rancher/highlander'

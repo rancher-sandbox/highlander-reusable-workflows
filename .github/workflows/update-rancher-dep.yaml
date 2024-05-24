@@ -50,17 +50,13 @@ jobs:
       - name: Run update script
         run: ./highlander-reusable-workflows/update-rancher-dep.sh
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.token }}
-          push-to-fork: highlander-ci-bot/rancher
-          title: ' Update ${{ inputs.operator_repo }} to v${{ inputs.new_operator_version }}'
-          body: |
-            Update ${{inputs.operator_repo}} operator to v${{ inputs.new_operator_version }}
-
-            Changelog: https://${{ inputs.operator_repo }}/releases/tag/v${{ inputs.new_operator_version }}
-
-            cc @rancher/highlander
-          branch-suffix: timestamp
-          base: ${{ inputs.rancher_ref }}
-          path: ./rancher/
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+        run: |
+          echo "TIMESTAMP=$(date +'%s')" >> "$GITHUB_ENV"
+          git add ./rancher/
+          git commit -m "Update ${{inputs.operator_repo}} operator to v${{ inputs.new_operator_version }}"
+          git remote add bot-fork https://github.com/highlander-ci-bot/rancher.git
+          git push -u bot-fork HEAD:rancher-$TIMESTAMP
+          gh pr create --title 'Update ${{ inputs.operator_repo }} operator to v${{inputs.new_operator_version }}' \
+            --body 'Update ${{ inputs.operator_repo}} operator to v${{inputs.new_operator_version}}\n\nChangelog: https://${{ inputs.operator_repo}}/releases/tag/v${{inputs.new_operator_version}}\n\ncc @rancher/highlander'
