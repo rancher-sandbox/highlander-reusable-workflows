@@ -105,15 +105,4 @@ jobs:
         with:
           name: rancher-${{ inputs.operator_name }}-crd-${{ env.BUILD_DATE }}.tgz
           path: ${{ inputs.operator_name }}/bin/rancher-${{ inputs.operator_name }}-crd-${{ env.BUILD_DATE }}.tgz 
-  nightly_custom_rancher_charts:
-    needs: 
-      - set_build_date
-      - nightly_operator_charts
-    uses: rancher-sandbox/highlander-reusable-workflows/.github/workflows/latest-rancher-build.yaml@main
-    with:
-      rancher_ref: ${{ inputs.rancher_ref }}
-      operator_name: ${{ inputs.operator_name }}
-      operator_repo: github.com/rancher/${{ inputs.operator_name }}
-      operator_commit: ${{ inputs.operator_commit }}
-      rancher_image: ttl.sh/rancher-${{ inputs.operator_name }}-nightly-${{ needs.set_build_date.outputs.BUILD_DATE }}
-      rancher_helm_repo:  oci://ttl.sh/rancher-${{ inputs.operator_name }}-nightly
+  
